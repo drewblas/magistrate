@@ -1,0 +1,22 @@
+magistrate(1) -- clustered worker process manager
+================================================
+
+## SYNOPSIS
+
+`magistrate`
+
+## DESCRIPTION
+
+**Magistrate** is a manager for workers that is cluster and network aware.  
+It interacts with a centralized server to get its management and marching orders.
+
+* It runs entirely in userland.
+* All config data is stored in ~/.magistrate
+
+## RUNNING
+
+`magistrate start` is used to run your application directly from the command line.
+
+## COPYRIGHT
+
+Foreman is Copyright (C) 2011 Drew Blas <drew.blas@gmail.com>
