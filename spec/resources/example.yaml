@@ -1,0 +1,5 @@
+test1:
+  name: test1
+  daemonize: true
+  working_dir: spec/resources/
+  start_cmd: ruby test1.rb

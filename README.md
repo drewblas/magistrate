@@ -11,6 +11,11 @@ It interacts with a centralized server to get its management and marching orders
 
 ## Manual
 
+The magistrate command line tool utilizes the following from the filesystem:
+
+* config/magistrate.yml - The configuration file (override the path with the --config option)
+* tmp/pids - stores the pids of itself and all managed workers
+
 
 ## License
 

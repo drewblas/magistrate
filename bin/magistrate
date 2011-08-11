@@ -2,6 +2,41 @@
 
 $:.unshift File.expand_path("../../lib", __FILE__)
 
-require "magistrate/supervisor"
+require "magistrate"
 
-Magistrate::Supervisor.run
+require "optparse"
+
+action = :start
+config_file = nil
+
+ARGV.options do |opts|
+  opts.banner = "Usage:  #{File.basename($PROGRAM_NAME)} COMMAND [OPTIONS]"
+  
+  opts.separator "COMMAND: start, stop, list, status"
+  
+  opts.separator "Specific Options:"
+  
+  opts.separator "Common Options:"
+  
+  opts.on( "-h", "--help",
+           "Show this message." ) do
+    puts opts
+    exit
+  end
+  
+  opts.on( '-c', '--config FILE', String, 'Specify Config file') do |f|
+    config_file = f
+  end
+  
+  begin
+    opts.parse!
+  rescue
+    puts opts
+    exit
+  end
+end
+
+config_file ||= File.join('config', 'magistrate.yaml')
+
+
+Magistrate::Supervisor.new(config_file).send(ARGV[0])
