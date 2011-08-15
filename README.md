@@ -9,6 +9,13 @@
 Magistrate is a manager for workers that is cluster and network aware.  
 It interacts with a centralized server to get its management and marching orders.
 
+It's intended to be run as a cron job periodically.  Each time it's run it'll:
+
+* Download the target state for each worker from the server
+* Check each worker
+* Try to get it to its target state
+* POST back to the server its state
+
 ## Manual
 
 The magistrate command line tool utilizes the following from the filesystem:
@@ -16,6 +23,21 @@ The magistrate command line tool utilizes the following from the filesystem:
 * config/magistrate.yml - The configuration file (override the path with the --config option)
 * tmp/pids - stores the pids of itself and all managed workers
 
+These are meant to coincide with easy running from a Rails app root (so that the worker config can be kept together with the app)
+If you're using capistrano, then the tmp/pids directory is persisted across deploys, so Magistrate will continue to run
+(with an updated config) even after a deploy.
+
+Your user-space cron job should look like this:
+
+*/5 0 0 0 0 magistrate run --config ~/my_app/current/config/magistrate.yml
+
+### What if the server is down?
+
+The magistrate request will time out after 30 seconds and then use its previously stored target_states.json file
+
+## Command line options
+
+See `magistrate`
 
 ## License
 

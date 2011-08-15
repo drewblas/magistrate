@@ -1,20 +1,20 @@
-# If daemonize is true, then Magistrate will daemonize this process (it doesn't daemonize itself)
-# Magistrate will track the pid of the underlying process
-# And will stop it by killing the pid
-# It will ping the status by sending USR1 signal to the process
-rake_like_worker:
-  name: RakeLikeWorker1
-  daemonize: true
-  working_dir: /data/app/
-  start_cmd: rake my:task RAILS_ENV=production
+monitor_url: http://localhost:3000
+workers:
+  # If daemonize is true, then Magistrate will daemonize this process (it doesn't daemonize itself)
+  # Magistrate will track the pid of the underlying process
+  # And will stop it by killing the pid
+  # It will ping the status by sending USR1 signal to the process
+  - rake_like_worker1:
+      daemonize: true
+      working_dir: /data/app/
+      start_cmd: rake my:task RAILS_ENV=production
   
-# If daemonize is false, then Magistrate will use a separate start and stop command
-# You must also manually specify the pid that this daemonized process creates
-daemon_worker:
-  name: DaemonLikeWorker2
-  daemonize: false
-  working_dir: /data/app/
-  start_cmd: mongrel_rails start -d
-  stop_cmd: mongrel_rails stop
-  pid_file: tmp/pids/mongrel.pid
+  # If daemonize is false, then Magistrate will use a separate start and stop command
+  # You must also manually specify the pid that this daemonized process creates
+  - daemon_worker1:
+      daemonize: false
+      working_dir: /data/app/
+      start_cmd: mongrel_rails start -d
+      stop_cmd: mongrel_rails stop
+      pid_file: tmp/pids/mongrel.pid
   

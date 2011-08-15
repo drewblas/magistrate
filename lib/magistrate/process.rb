@@ -1,17 +1,17 @@
 class Magistrate::Process
 
-  attr_reader :name, :daemonize, :start_cmd, :stop_cmd, :pid_file, :working_dir
+  attr_reader :name, :daemonize, :start_cmd, :stop_cmd, :pid_file, :working_dir, :env
+  attr_accessor :target_state, :monitored
 
-  def initialize(options = {})
-    puts "Options:"
-    puts options.inspect
-    @name         = options[:name]
+  def initialize(name, options = {})
+    @name         = name
     @daemonize    = options[:daemonize]
     @working_dir  = options[:working_dir]
     @start_cmd    = options[:start_cmd]
     
     if @daemonize
       @pid_file   = File.join('tmp', 'pids', "#{@name}.pid")
+      @stop_signal = options[:stop_signal] || 'TERM'
     else
       @stop_cmd     = options[:end_cmd]
       @pid_file     = options[:pid_file]
@@ -19,33 +19,50 @@ class Magistrate::Process
     
     @stop_timeout = 5
     @start_timeout = 5
+    
+    @env = {}
+    @monitored = false
   end
   
   def running?
   end
   
+  def state
+    if @monitored
+      if self.alive?
+        :running
+      else
+        :stopped
+      end
+    else
+      :unmonitored
+    end
+  end
+  
   # This is to be called when we first start managing a worker
   # It will check if the pid exists and if so, is the process responding OK?
-  # Otherwise, it will kill and relaunch it
+  # It will take action based on the target state
   def supervise!
     LOGGER.info("#{@name} supervising")
-    if self.alive?
-      LOGGER.info("#{@name} is already alive")
-    else
-      LOGGER.info("#{@name} is not alive")
-      start
+    if state != @target_state
+      if @target_state == :running
+        start
+      elsif @target_state == :stopped
+        stop
+      end
     end
   end
   
   def start
     LOGGER.info("#{@name} starting")
-    pid = if @daemonize
-      double_fork(@start_cmd)
+    if @daemonize
+      @pid = double_fork(@start_cmd)
       # TODO: Should check if the pid really exists as we expect
-    else
-      single_fork
       write_pid
+    else
+      @pid = single_fork(@start_cmd)
     end
+    @pid
   end
   
   def stop
@@ -82,7 +99,7 @@ class Magistrate::Process
     exit_code = status[1] >> 8
     
     if exit_code != 0
-      LOGGER.warn("#{@name} #{action} command exited with non-zero code = #{exit_code}")
+      LOGGER.warn("#{@name} command exited with non-zero code = #{exit_code}")
     end
     pid
   end
@@ -121,30 +138,33 @@ class Magistrate::Process
       ::Process.setsid
 
       dir = @working_dir || '/'
-      Dir.chdir @working_dir
+      Dir.chdir dir
       
       $0 = command
       STDIN.reopen "/dev/null"
       
-      if self.log_cmd
-        STDOUT.reopen IO.popen(self.log_cmd, "a") 
-      else
-        STDOUT.reopen file_in_chroot(self.log), "a"        
-      end
+      STDOUT.reopen '/dev/null'
+      STDERR.reopen STDOUT
       
-      if err_log_cmd
-        STDERR.reopen IO.popen(err_log_cmd, "a") 
-      elsif err_log && (log_cmd || err_log != log)
-        STDERR.reopen file_in_chroot(err_log), "a"        
-      else
-        STDERR.reopen STDOUT
-      end
+      # if self.log_cmd
+      #         STDOUT.reopen IO.popen(self.log_cmd, "a") 
+      #       else
+      #         STDOUT.reopen file_in_chroot(self.log), "a"        
+      #       end
+      #       
+      #       if err_log_cmd
+      #         STDERR.reopen IO.popen(err_log_cmd, "a") 
+      #       elsif err_log && (log_cmd || err_log != log)
+      #         STDERR.reopen file_in_chroot(err_log), "a"        
+      #       else
+      #         STDERR.reopen STDOUT
+      #       end
       
       # close any other file descriptors
       3.upto(256){|fd| IO::new(fd).close rescue nil}
 
-      if self.env && self.env.is_a?(Hash)
-        self.env.each do |(key, value)|
+      if @env && @env.is_a?(Hash)
+        @env.each do |key, value|
           ENV[key] = value.to_s
         end
       end
@@ -210,13 +230,13 @@ class Magistrate::Process
   
   def write_pid
     File.open(@pid_file, 'w') do |f|
-      f.write pid
+      f.write @pid
     end
   end
   
   def alive?
-    if self.pid
-      System::Process.new(self.pid).exists?
+    if p = self.pid
+      !!::Process.kill(0, p) rescue false
     else
       false
     end

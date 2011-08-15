@@ -12,7 +12,7 @@ config_file = nil
 ARGV.options do |opts|
   opts.banner = "Usage:  #{File.basename($PROGRAM_NAME)} COMMAND [OPTIONS]"
   
-  opts.separator "COMMAND: start, stop, list, status"
+  opts.separator "COMMAND: run, list, status"
   
   opts.separator "Specific Options:"
   
@@ -39,4 +39,4 @@ end
 config_file ||= File.join('config', 'magistrate.yaml')
 
 
-Magistrate::Supervisor.new(config_file).send(ARGV[0])
+Magistrate::Supervisor.new(config_file).send(ARGV[0], ARGV[1])
