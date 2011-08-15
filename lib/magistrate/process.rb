@@ -21,7 +21,7 @@ class Magistrate::Process
     @start_timeout = 5
     
     @env = {}
-    @monitored = false
+
     @target_state = :unknown
   end
   
@@ -29,14 +29,14 @@ class Magistrate::Process
   end
   
   def state
-    if @monitored
+    if @target_state == :unmonitored || @target_state == :unknown
+      :unmonitored
+    else
       if self.alive?
         :running
       else
         :stopped
       end
-    else
-      :unmonitored
     end
   end
   
@@ -68,8 +68,7 @@ class Magistrate::Process
   
   def stop
     if @daemonize
-      ::Process.kill(@stop_signal, pid) rescue nil
-      LOGGER.info("#{@name} sent SIG#{@stop_signal}")
+      signal(@stop_signal, pid)
         
       # Poll to see if it's dead
       @stop_timeout.times do
@@ -84,7 +83,7 @@ class Magistrate::Process
         sleep 1
       end
       
-      ::Process.kill('KILL', pid) rescue nil
+      signal('KILL', pid)
       LOGGER.warn("#{@name} still alive after #{@stop_timeout}s; sent SIGKILL")
     else
       single_fork(@stop_cmd)
@@ -189,7 +188,7 @@ class Magistrate::Process
     # Poll to see if it's dead
     @stop_timeout.times do
       begin
-        ::Process.kill(0, self.pid)
+        signal(0)
       rescue Errno::ESRCH
         # It died. Good.
         return
@@ -199,17 +198,18 @@ class Magistrate::Process
     end
     
     # last resort
-    ::Process.kill('KILL', self.pid) rescue nil
+    signal('KILL')
     LOGGER.warn("#{@name} still alive after #{@stop_timeout}s; sent SIGKILL")
   end
   
   # Send the given signal to this process.
   #
   # Returns nothing
-  def signal(sig)
+  def signal(sig, target_pid = nil)
+    target_pid ||= self.pid
     sig = sig.to_i if sig.to_i != 0
     LOGGER.info("#{@name} sending signal '#{sig}' to pid #{self.pid}")
-    ::Process.kill(sig, self.pid) rescue nil
+    ::Process.kill(sig, target_pid) rescue nil
   end
   
   # Fetch the PID from pid_file. If the pid_file does not

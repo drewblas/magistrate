@@ -1,4 +1,8 @@
 monitor_url: http://localhost:3000
+
+#Normal magistrate reports itself as: `hostname`-`user`
+#supervisor_name_override: some_other_name
+
 workers:
   # If daemonize is true, then Magistrate will daemonize this process (it doesn't daemonize itself)
   # Magistrate will track the pid of the underlying process
