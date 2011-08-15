@@ -16,6 +16,7 @@ Gem::Specification.new do |gem|
   gem.files = Dir["**/*"].select { |d| d =~ %r{^(README|bin/|lib/|spec/)} }
   #gem.files << "man/magistrate.1"
 
+  gem.add_runtime_dependency 'json'
   gem.add_development_dependency 'rake'
   gem.add_development_dependency 'ronn'
   gem.add_development_dependency 'fakefs', '~> 0.2.1'

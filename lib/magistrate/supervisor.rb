@@ -1,4 +1,6 @@
+require 'rubygems'
 require 'yaml'
+require 'json'
 require 'fileutils'
 require 'net/http'
 require 'uri'
@@ -26,7 +28,7 @@ module Magistrate
     end
 
     def run(params = nil)
-      puts "Starting Magistrate"
+      puts "Starting Magistrate [[[#{self.name}]]] talking to [[[#{@config[:monitor_url]}]]]"
       set_target_states!
       
       # Pull in all already-running workers and set their target states
@@ -89,11 +91,11 @@ module Magistrate
     def load_remote_target_states!
       http = Net::HTTP.new(@uri.host, @uri.port)
       http.read_timeout = 30
-      request = Net::HTTP::Get.new(@uri.request_uri + "/api/status/#{self.name}")
+      request = Net::HTTP::Get.new(@uri.request_uri + "api/status/#{self.name}")
 
       response = http.request(request)
       
-      if response.code == 200
+      if response.code == '200'
         @loaded_from = :server
         @target_states = YAML.load(response.body)
         save_target_states! # The double serialization here might not be best for performance, but will guarantee that the locally stored file is internally consistent
@@ -123,14 +125,14 @@ module Magistrate
     def send_status
       http = Net::HTTP.new(@uri.host, @uri.port)
       http.read_timeout = 30
-      request = Net::HTTP::Post.new(@uri.request_uri + "/api/status/#{self.name}")
-
+      request = Net::HTTP::Post.new(@uri.request_uri + "api/status/#{self.name}")
+      request.set_form_data({ :status => JSON.generate(status) })
       response = http.request(request)
     end
     
     # This is the name that the magistrate_monitor will identify us as
     def name
-      @_name ||= (@config[:supervisor_name_override] || "#{`hostname`}-#{`whoami`}")
+      @_name ||= (@config[:supervisor_name_override] || "#{`hostname`.chomp}-#{`whoami`.chomp}").gsub(/[^a-zA-Z0-9\-\_]/, ' ').gsub(/\s+/, '-').downcase
     end
   end
 end
