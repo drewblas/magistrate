@@ -9,13 +9,6 @@
 Magistrate is a manager for workers that is cluster and network aware.  
 It interacts with a centralized server to get its management and marching orders.
 
-It's intended to be run as a cron job periodically.  Each time it's run it'll:
-
-* Download the target state for each worker from the server
-* Check each worker
-* Try to get it to its target state
-* POST back to the server its state
-
 ## Manual
 
 The magistrate command line tool utilizes the following from the filesystem:
@@ -33,11 +26,38 @@ Your user-space cron job should look like this:
 
 ### What if the server is down?
 
-The magistrate request will time out after 30 seconds and then use its previously stored target_states.json file
+The magistrate request will time out after 30 seconds and then use its previously stored target_states.yml file
 
 ## Command line options
 
-See `magistrate`
+### run
+
+`magistrate run`
+
+run is the primary command used.  It's intended to be run as a cron job periodically.  Each time it's run it'll:
+
+* Download the target state for each worker from the server
+* Check each worker
+* Try to get it to its target state
+* POST back to the server its state
+
+### list
+
+`magistrate list`
+
+Will return a string like: 
+
+{:test1=>{:state=>:unmonitored, :target_state=>:running}}
+
+This is the status string that is sent to the remote server during a run
+
+### start / stop
+
+`magistrate start WORKER_NAME`
+`magistrate stop WORKER_NAME`
+
+Allows you to manually start/stop a worker process.  This has the side effect of writing the new target_state to the cached target state.  It will
+then continue to use this requested state UNTIL it next gets a different state from the server.
 
 ## License
 
