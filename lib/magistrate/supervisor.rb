@@ -1,5 +1,4 @@
-require 'yaml'  # YAML for internal config and json for over-the-wire config.  Ugh!
-require 'json'
+require 'yaml'
 require 'fileutils'
 require 'net/http'
 require 'uri'
@@ -15,13 +14,16 @@ module Magistrate
       FileUtils.mkdir_p(@pid_path) unless File.directory? @pid_path
       
       @config = File.open(config_file) { |file| YAML.load(file) }.symbolize_keys!
+      @config[:workers].symbolize_keys!
 
-      @uri = URI.parse @config[:url]
+      @uri = URI.parse @config[:monitor_url]
 
       @config[:workers].each do |k,v|
         v.symbolize_keys!
         @workers[k] = Process.new(k,v)
       end
+      
+      @loaded_from = nil
     end
 
     def run(params = nil)
@@ -51,43 +53,57 @@ module Magistrate
       worker = params
       puts "Stopping: #{worker}"
       @workers[worker.to_sym].stop
+      
+      # Save that we've requested this to be stopped
     end
     
     def list(params = nil)
-      @workers.each do |k, worker|
-        state = worker.state
-        
-        puts "#{k}: #{worker.alive? ? 'Running' : 'Stopped'}"
-      end
-    end
-    
-    # Generates the exact status that will be sent to the server
-    def status
-      require 'pp'
+      set_target_states!
       
-      pp worker_status
+      require 'pp'
+      pp status
     end
     
     protected
     
-    def retrieve_target_states
-      http = Net::HTTP.new(@uri.host, @uri.port)
-      http.read_timeout = 30
-      request = Net::HTTP::Get.new(uri.request_uri + 'api/target_states')
-
-      response = http.request(request)
+    def set_target_states!(local_only = false)
+      @target_states = local_only ? load_saved_target_states : load_remote_target_states
       
-      rescue Timeout::Error => e
-        puts "Connection to server #{@config[:url]} failed.  Using target states"
-        load_saved_target_states!
+      @target_states['workers'].each do |name, state|
+        begin
+          @workers[name.to_sym].target_state = state.to_sym
+        rescue
+          puts "Worker #{name} not found in local config"
+        end
+      end
     end
     
-    def load_saved_target_states!
+    def load_remote_target_states
+      http = Net::HTTP.new(@uri.host, @uri.port)
+      http.read_timeout = 30
+      request = Net::HTTP::Get.new(@uri.request_uri + 'api/target_states')
+
+      response = http.request(request)
+      @loaded_from = :server
       
+      return YAML.load(response.body)
+      
+      rescue StandardError => e
+        puts "Connection to server #{@config[:monitor_url]} failed.  Using saved target states..."
+        load_saved_target_states
+    end
+    
+    def load_saved_target_states
+      @loaded_from = :file
+      @target_states = File.open(target_states_file) { |file| YAML.load(file) }
     end
     
     def save_target_states
-      
+      File.open(target_states_file, "w") { |file| YAML.dump(obj, file) }
+    end
+    
+    def target_states_file
+      File.join @pid_path, 'target_states.yml'
     end
     
     def send_status
@@ -95,12 +111,17 @@ module Magistrate
     end
     
     # Returns the actual hash of all workers and their status
-    def worker_status
+    def status
       s = {}
       
       @workers.each do |k,process|
-        
+        s[k] = {
+          :state => process.state,
+          :target_state => process.target_state
+        }
       end
+      
+      s
     end
   end
 end

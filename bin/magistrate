@@ -12,7 +12,7 @@ config_file = nil
 ARGV.options do |opts|
   opts.banner = "Usage:  #{File.basename($PROGRAM_NAME)} COMMAND [OPTIONS]"
   
-  opts.separator "COMMAND: run, list, status"
+  opts.separator "COMMAND: run, list, start WORKER, stop WORKER"
   
   opts.separator "Specific Options:"
   

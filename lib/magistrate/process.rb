@@ -22,6 +22,7 @@ class Magistrate::Process
     
     @env = {}
     @monitored = false
+    @target_state = :unknown
   end
   
   def running?
