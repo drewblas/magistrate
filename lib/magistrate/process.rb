@@ -44,7 +44,7 @@ class Magistrate::Process
   # It will check if the pid exists and if so, is the process responding OK?
   # It will take action based on the target state
   def supervise!
-    LOGGER.info("#{@name} supervising")
+    LOGGER.info("#{@name} supervising.  Is: #{state}.  Target: #{@target_state}")
     if state != @target_state
       if @target_state == :running
         start
