@@ -8,6 +8,7 @@
 
 Magistrate is a manager for workers that is cluster and network aware.  
 It interacts with a centralized server to get its management and marching orders.
+It's designed to be a process manager that runs entirely in userspace: no root access needed.
 
 ## Manual
 
@@ -29,6 +30,10 @@ Your user-space cron job should look like this:
 The magistrate request will time out after 30 seconds and then use its previously stored target_states.yml file
 
 ## Command line options
+
+    --config path/to/config.yml
+    
+Sets the config file path.  See example_config.yml for an example config
 
 ### run
 

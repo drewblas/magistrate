@@ -36,7 +36,7 @@ end
 
 desc "Commit the manual to git"
 task "man:commit" => :man do
-  sh "git add README.markdown"
+  sh "git add README.md"
   sh "git commit -m 'update readme' || echo 'nothing to commit'"
 end
 
@@ -48,7 +48,7 @@ task :pages => "man:commit" do
     rm ./index.html
     cp /tmp/magistrate.1.html ./index.html
     git add -u index.html
-    git commit -m "saving man page to github docs"
+    git commit -m "Saving man page to github docs"
     git push origin -f gh-pages
     git checkout master
   }

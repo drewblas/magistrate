@@ -12,9 +12,10 @@ Gem::Specification.new do |gem|
 
   gem.description = gem.summary
 
-  #gem.executables = "magistrate"
   gem.files = Dir["**/*"].select { |d| d =~ %r{^(README|bin/|lib/|spec/)} }
   #gem.files << "man/magistrate.1"
+  
+  gem.executables << 'magistrate'
 
   gem.add_runtime_dependency 'json'
   gem.add_development_dependency 'rake'
