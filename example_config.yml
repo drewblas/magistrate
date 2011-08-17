@@ -1,6 +1,9 @@
 # Should have a trailing slash
 monitor_url: http://localhost:3000/magistrate/
 
+# By default, if this isn't set, it'll use tmp/pids
+# pid_path: /var/www/app/current/tmp/pids
+
 #Normal magistrate reports itself as: `hostname`-`user`
 #supervisor_name_override: some_other_name
 

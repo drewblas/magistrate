@@ -14,7 +14,6 @@ module Magistrate
       @workers = {}
       
       #File.expand_path('~')
-      @pid_path = File.join( 'tmp', 'pids' )
       
       FileUtils.mkdir_p(@pid_path) unless File.directory? @pid_path
       
@@ -22,8 +21,10 @@ module Magistrate
       @config.recursive_symbolize_keys!
 
       @uri = URI.parse @config[:monitor_url]
+      @pid_path = @config[:pid_path] || File.join( 'tmp', 'pids' )
 
       @config[:workers].each do |k,v|
+        v[:pid_path] ||= @pid_path
         @workers[k] = Process.new(k,v)
       end
       

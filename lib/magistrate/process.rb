@@ -8,9 +8,10 @@ class Magistrate::Process
     @daemonize    = options[:daemonize]
     @working_dir  = options[:working_dir]
     @start_cmd    = options[:start_cmd]
+    @pid_path     = options[:pid_path]
     
     if @daemonize
-      @pid_file   = File.join('tmp', 'pids', "#{@name}.pid")
+      @pid_file   = File.join(@pid_path, "#{@name}.pid")
       @stop_signal = options[:stop_signal] || 'TERM'
     else
       @stop_cmd     = options[:end_cmd]
