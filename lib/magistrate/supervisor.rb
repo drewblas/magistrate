@@ -74,7 +74,8 @@ module Magistrate
       @workers.each do |k,process|
         s[k] = {
           :state => process.state,
-          :target_state => process.target_state
+          :target_state => process.target_state,
+          :pid => process.pid
         }
       end
       
