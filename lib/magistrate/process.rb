@@ -141,7 +141,8 @@ class Magistrate::Process
       dir = @working_dir || '/'
       Dir.chdir dir
       
-      $0 = command
+      #$0 = command
+      $0 = "Magistrate Worker: #{@name}"
       STDIN.reopen "/dev/null"
       
       STDOUT.reopen '/dev/null'
