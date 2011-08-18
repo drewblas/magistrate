@@ -154,7 +154,7 @@ module Magistrate
     
     # This is the name that the magistrate_monitor will identify us as
     def name
-      @_name ||= (@config[:supervisor_name_override] || "#{`hostname`.chomp}-#{`whoami`.chomp}").gsub(/[^a-zA-Z0-9\-\_]/, ' ').gsub(/\s+/, '-').downcase
+      @_name ||= (@config[:supervisor_name_override] || "#{@config[:root_name]}-#{`hostname`.chomp}").gsub(/[^a-zA-Z0-9\-\_]/, ' ').gsub(/\s+/, '-').downcase
     end
   end
 end

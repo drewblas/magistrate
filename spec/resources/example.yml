@@ -1,6 +1,9 @@
 monitor_url: http://localhost
 
-#Normal magistrate reports itself as: `hostname`-`user`
+#Normal magistrate reports itself as: root_name-`hostname`
+root_name: super1
+
+#Use this to avoid using the hostname at all.  The supervisor name will be this instead of root_name-`hostname`
 #supervisor_name_override: some_other_name
 
 workers:
