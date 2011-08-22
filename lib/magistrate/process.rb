@@ -1,6 +1,7 @@
-class Magistrate::Process
+module Magistrate
+class Process
 
-  attr_reader :name, :daemonize, :start_cmd, :stop_cmd, :pid_file, :working_dir, :env
+  attr_reader :name, :daemonize, :start_cmd, :stop_cmd, :pid_file, :working_dir, :env, :logs
   attr_accessor :target_state, :monitored
 
   def initialize(name, options = {})
@@ -24,6 +25,20 @@ class Magistrate::Process
     @env = {}
 
     @target_state = :unknown
+    @logs = []
+  end
+  
+  def log(str)
+    @logs << str
+  end
+  
+  def status
+    {
+      :state => self.state,
+      :target_state => self.target_state,
+      :pid => self.pid,
+      :logs => @logs
+    }
   end
   
   def running?
@@ -45,7 +60,7 @@ class Magistrate::Process
   # It will check if the pid exists and if so, is the process responding OK?
   # It will take action based on the target state
   def supervise!
-    LOGGER.info("#{@name} supervising.  Is: #{state}.  Target: #{@target_state}")
+    log "Supervising.  Is: #{state}.  Target: #{@target_state}"
     if state != @target_state
       if @target_state == :running
         start
@@ -56,7 +71,7 @@ class Magistrate::Process
   end
   
   def start
-    LOGGER.info("#{@name} starting")
+    log "#{@name} starting"
     if @daemonize
       @pid = double_fork(@start_cmd)
       # TODO: Should check if the pid really exists as we expect
@@ -77,7 +92,7 @@ class Magistrate::Process
           ::Process.kill(0, pid)
         rescue Errno::ESRCH
           # It died. Good.
-          LOGGER.info("#{@name} process stopped")
+          log "Process stopped"
           return
         end
         
@@ -85,7 +100,7 @@ class Magistrate::Process
       end
       
       signal('KILL', pid)
-      LOGGER.warn("#{@name} still alive after #{@stop_timeout}s; sent SIGKILL")
+      log "Still alive after #{@stop_timeout}s; sent SIGKILL"
     else
       single_fork(@stop_cmd)
       ensure_stop
@@ -100,7 +115,7 @@ class Magistrate::Process
     exit_code = status[1] >> 8
     
     if exit_code != 0
-      LOGGER.warn("#{@name} command exited with non-zero code = #{exit_code}")
+      log "Command exited with non-zero code = #{exit_code}"
     end
     pid
   end
@@ -180,10 +195,10 @@ class Magistrate::Process
   #
   # Returns nothing
   def ensure_stop
-    LOGGER.warn("#{@name} ensuring stop...")
+    log "Ensuring stop..."
 
     unless self.pid
-      LOGGER.warn("#{@name} stop called but pid is uknown")
+      log "Stop called but pid is unknown"
       return
     end
     
@@ -201,7 +216,7 @@ class Magistrate::Process
     
     # last resort
     signal('KILL')
-    LOGGER.warn("#{@name} still alive after #{@stop_timeout}s; sent SIGKILL")
+    log "Still alive after #{@stop_timeout}s; sent SIGKILL"
   end
   
   # Send the given signal to this process.
@@ -210,7 +225,7 @@ class Magistrate::Process
   def signal(sig, target_pid = nil)
     target_pid ||= self.pid
     sig = sig.to_i if sig.to_i != 0
-    LOGGER.info("#{@name} sending signal '#{sig}' to pid #{self.pid}")
+    log "Sending signal '#{sig}' to pid #{target_pid}"
     ::Process.kill(sig, target_pid) rescue nil
   end
   
@@ -245,4 +260,5 @@ class Magistrate::Process
     end
   end
 
+end
 end

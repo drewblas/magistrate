@@ -10,18 +10,18 @@ require 'uri'
 
 module Magistrate
   class Supervisor    
-    def initialize(config_file)
+    def initialize(config_file, overrides = {})
       @workers = {}
       
       #File.expand_path('~')
-      
-      FileUtils.mkdir_p(@pid_path) unless File.directory? @pid_path
-      
+      @config_file = config_file
       @config = File.open(config_file) { |file| YAML.load(file) }    
       @config.recursive_symbolize_keys!
 
       @uri = URI.parse @config[:monitor_url]
       @pid_path = @config[:pid_path] || File.join( 'tmp', 'pids' )
+      
+      FileUtils.mkdir_p(@pid_path) unless File.directory? @pid_path
 
       @config[:workers].each do |k,v|
         v[:pid_path] ||= @pid_path
@@ -29,24 +29,38 @@ module Magistrate
       end
       
       @loaded_from = nil
+      @logs = []
+      @verbose = overrides[:verbose]
+      
+      if @verbose
+        require 'pp'
+      end
     end
 
     def run(params = nil)
-      puts "Starting Magistrate [[[#{self.name}]]] talking to [[[#{@config[:monitor_url]}]]]"
+      log "Run Complete at: #{Time.now}"
+      
+      log "Starting Magistrate [[[#{self.name}]]] talking to [[[#{@config[:monitor_url]}]]]"
       set_target_states!
       
       # Pull in all already-running workers and set their target states
       @workers.each do |k, worker|
         worker.supervise!
+        if @verbose
+          puts "==== Worker: #{k}"
+          worker.logs.join("\n")
+        end
       end
       
       send_status
+      
+      log "Run Complete at: #{Time.now}"
     end
     
     # 
     def start(params = nil)
       worker = params
-      puts "Starting: #{worker}"
+      log "Starting: #{worker}"
       @workers[worker.to_sym].supervise!
       
       # Save that we've requested this to be started
@@ -54,7 +68,7 @@ module Magistrate
     
     def stop(params = nil)
       worker = params
-      puts "Stopping: #{worker}"
+      log "Stopping: #{worker}"
       @workers[worker.to_sym].stop
       
       # Save that we've requested this to be stopped
@@ -82,6 +96,11 @@ module Magistrate
       s
     end
     
+    def log(str)
+      @logs << str
+      puts str if @verbose
+    end
+    
     protected
     
     # Loads the @target_states from either the remote server or local cache
@@ -95,7 +114,7 @@ module Magistrate
           if @workers[name]
             @workers[name].target_state = target['target_state'].to_sym if target['target_state']
           else
-            puts "Worker #{name} not found in local config"
+            log "Worker #{name} has an entry in the target_state but it's not listed in the local config file and will be ignored."
           end
         end
       end
@@ -115,14 +134,14 @@ module Magistrate
         @target_states = JSON.parse(response.body)
         save_target_states! # The double serialization here might not be best for performance, but will guarantee that the locally stored file is internally consistent
       else
-        puts "Server responded with error #{response.code} : [[[#{response.body}]]].  Using saved target states..."
+        log "Server responded with error #{response.code} : [[[#{response.body}]]].  Using saved target states..."
         load_saved_target_states!
       end
       
     rescue StandardError => e
-      puts "Connection to server #{@config[:monitor_url]} failed."
-      puts "Error: #{e}"
-      puts "Using saved target states..."
+      log "Connection to server #{@config[:monitor_url]} failed."
+      log "Error: #{e}"
+      log "Using saved target states..."
       load_saved_target_states!
     end
     
@@ -150,7 +169,7 @@ module Magistrate
       request.set_form_data({ :status => JSON.generate(status) })
       response = http.request(request)
     rescue StandardError => e
-      puts "Sending status to #{@config[:monitor_url]} failed"
+      log "Sending status to #{@config[:monitor_url]} failed"
     end
     
     # This is the name that the magistrate_monitor will identify us as

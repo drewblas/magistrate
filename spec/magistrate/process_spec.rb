@@ -30,10 +30,6 @@ describe "Magistrate::Process" do
         @process.state.should == :stopped
       end
     end
-    
-    it "should " do
-      true
-    end
   end
   
   describe 'Self-Daemonizing Worker' do

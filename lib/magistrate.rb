@@ -5,10 +5,6 @@ require 'magistrate/version'
 require 'magistrate/supervisor'
 require 'magistrate/process'
 
-require 'logger'
-# App wide logging system
-LOGGER = Logger.new(STDOUT)
-
 module Magistrate
   
 end
