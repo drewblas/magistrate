@@ -1,6 +1,6 @@
 require "rubygems"
-require "rspec"
 require 'webmock/rspec'
+require "rspec"
 #require "fakefs/safe"
 #require "fakefs/spec_helpers"
 

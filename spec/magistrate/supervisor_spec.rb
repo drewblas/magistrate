@@ -23,11 +23,15 @@ describe "Magistrate::Supervisor" do
     body = JSON.generate(body)
     stub_request(:get, "http://localhost:3000/magistrate/api/status/test_name").
       to_return(:status => 200, :body => body, :headers => {})
+      
+    stub_request(:post, "http://localhost:3000/magistrate/api/status/test_name").
+      to_return(:status => 200, :body => 'OK', :headers => {})
+      
+    
     
     @supervisor.run
+    
+    a_request(:get, "http://localhost:3000/magistrate/api/status/test_name").should have_been_made
+    a_request(:post, "http://localhost:3000/magistrate/api/status/test_name").should have_been_made
   end
-  
-  # it 'should make a remote call to get the latest databag' do
-  #   @supervisor.
-  # end
 end

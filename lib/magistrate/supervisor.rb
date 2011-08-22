@@ -125,11 +125,7 @@ module Magistrate
     # Gets and sets @target_states from the server
     # Automatically falls back to the local cache
     def load_remote_target_states!
-      http = Net::HTTP.new(@uri.host, @uri.port)
-      http.read_timeout = 30
-      request = Net::HTTP::Get.new(@uri.request_uri + "api/status/#{self.name}")
-
-      response = http.request(request)
+      response = remote_request(Net::HTTP::Get)
       
       if response.code == '200'
         @loaded_from = :server
@@ -165,18 +161,29 @@ module Magistrate
     # Currently only sends basic worker info, but could start sending lots more:
     # 
     def send_status
-      http = Net::HTTP.new(@uri.host, @uri.port)
-      http.read_timeout = 30
-      request = Net::HTTP::Post.new(@uri.request_uri + "api/status/#{self.name}")
-      request.set_form_data({ :status => JSON.generate(status) })
-      response = http.request(request)
+      remote_request Net::HTTP::Post, { :status => JSON.generate(status) }
     rescue StandardError => e
       log "Sending status to #{@config[:monitor_url]} failed"
+      log "Error: #{e}"
     end
     
     # This is the name that the magistrate_monitor will identify us as
     def name
       @_name ||= (@config[:supervisor_name_override] || "#{@config[:root_name]}-#{`hostname`.chomp}").gsub(/[^a-zA-Z0-9\-\_]/, ' ').gsub(/\s+/, '-').downcase
+    end
+    
+    # Wrapper method for easy remote requests
+    def remote_request(klass, form_data = nil)
+      http = Net::HTTP.new(@uri.host, @uri.port)
+      http.read_timeout = 30
+      request = klass.new(@uri.request_uri + "api/status/#{self.name}")
+      request.set_form_data(form_data) if form_data
+      
+      if @config[:http_username] && @config[:http_password]
+        request.basic_auth @config[:http_username], @config[:http_password]
+      end
+      
+      http.request(request)
     end
   end
 end
