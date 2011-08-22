@@ -38,7 +38,7 @@ module Magistrate
     end
 
     def run(params = nil)
-      log "Run Complete at: #{Time.now}"
+      log "Run started at: #{Time.now}"
       
       log "Starting Magistrate [[[#{self.name}]]] talking to [[[#{@config[:monitor_url]}]]]"
       set_target_states!
@@ -54,7 +54,7 @@ module Magistrate
       
       send_status
       
-      log "Run Complete at: #{Time.now}"
+      log "Run Complete at: #{Time.now}" #This is only good in verbose mode, but that's ok
     end
     
     # 
@@ -88,11 +88,12 @@ module Magistrate
            :pid_path => @pid_path,
            :monitor_url => @config[:monitor_url],
            :config_file => @config_file,
-           :logs => @logs
+           :logs => @logs,
+           :workers => {}
           }
       
       @workers.each do |k,process|
-        s[k] = process.status
+        s[:workers][k] = process.status
       end
       
       s
