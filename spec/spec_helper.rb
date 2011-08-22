@@ -1,5 +1,6 @@
 require "rubygems"
 require "rspec"
+require 'webmock/rspec'
 #require "fakefs/safe"
 #require "fakefs/spec_helpers"
 
@@ -40,4 +41,9 @@ RSpec.configure do |config|
   config.color_enabled = true
   #config.include FakeFS::SpecHelpers
   config.mock_with :rr
+  
+  config.before(:suite) do
+    f = 'tmp/pids/target_states.yml'
+    File.delete(f) if File.exist?(f)
+  end
 end

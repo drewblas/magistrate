@@ -83,14 +83,16 @@ module Magistrate
     
     # Returns the actual hash of all workers and their status
     def status
-      s = {}
+      s = {
+           :name => self.name,
+           :pid_path => @pid_path,
+           :monitor_url => @config[:monitor_url],
+           :config_file => @config_file,
+           :logs => @logs
+          }
       
       @workers.each do |k,process|
-        s[k] = {
-          :state => process.state,
-          :target_state => process.target_state,
-          :pid => process.pid
-        }
+        s[k] = process.status
       end
       
       s

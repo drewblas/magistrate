@@ -1,24 +1,28 @@
-monitor_url: http://localhost
+# Should have a trailing slash
+monitor_url: http://localhost:3000/magistrate/
+
+# By default, if this isn't set, it'll use tmp/pids
+# pid_path: /var/www/app/current/tmp/pids
 
 #Normal magistrate reports itself as: root_name-`hostname`
 root_name: super1
 
 #Use this to avoid using the hostname at all.  The supervisor name will be this instead of root_name-`hostname`
-#supervisor_name_override: some_other_name
+supervisor_name_override: test_name
 
 workers:
   # If daemonize is true, then Magistrate will daemonize this process (it doesn't daemonize itself)
   # Magistrate will track the pid of the underlying process
   # And will stop it by killing the pid
   # It will ping the status by sending USR1 signal to the process
-  rake_like_worker:
+  rake_like_worker1:
     daemonize: true
     working_dir: /data/app/
     start_cmd: rake my:task RAILS_ENV=production
   
   # If daemonize is false, then Magistrate will use a separate start and stop command
   # You must also manually specify the pid that this daemonized process creates
-  daemon_worker:
+  daemon_worker1:
     daemonize: false
     working_dir: /data/app/
     start_cmd: mongrel_rails start -d
