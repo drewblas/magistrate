@@ -63,8 +63,11 @@ class Worker
     log "Supervising.  Is: #{state}.  Target: #{@target_state}"
     if state != @target_state
       case @target_state
-      when :forced_restart 
-        
+      when :forced_restart then
+        @reset_target_state_to = :running
+        log "Restart: Stopping, then Starting, then reporting new target_state of :running"
+        stop
+        start
       when :running then start
       when :stopped then stop
       end
@@ -72,12 +75,13 @@ class Worker
   end
   
   def start
-    log "#{@name} starting"
     if @daemonize
+      log "Starting as daemon with double_fork"
       @pid = double_fork(@start_cmd)
       # TODO: Should check if the pid really exists as we expect
       write_pid
     else
+      log "Starting as self-daemonizing with single_fork"
       @pid = single_fork(@start_cmd)
     end
     @pid

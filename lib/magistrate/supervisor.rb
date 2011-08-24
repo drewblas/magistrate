@@ -24,7 +24,7 @@ module Magistrate
       FileUtils.mkdir_p(@pid_path) unless File.directory? @pid_path
 
       @config[:workers].each do |name,params|
-        v[:pid_path] ||= @pid_path
+        params[:pid_path] ||= @pid_path
         @workers[name] = Worker.new(name, params)
       end
       
@@ -46,9 +46,19 @@ module Magistrate
       # Pull in all already-running workers and set their target states
       @workers.each do |k, worker|
         worker.supervise!
+        
+        if worker.reset_target_state_to
+          begin
+            remote_request Net::HTTP::Post, "supervisors/#{self.name}/workers/#{worker.name}/set_target_state/#{worker.reset_target_state_to}"
+          rescue StandardError => e
+            log "Error resetting target_state for #{worker.name} to #{worker.reset_target_state_to}"
+            log "Error: #{e}"
+          end
+        end
+        
         if @verbose
           puts "==== Worker: #{k}"
-          worker.logs.join("\n")
+          puts worker.logs.join("\n")
         end
       end
       
@@ -126,7 +136,7 @@ module Magistrate
     # Gets and sets @target_states from the server
     # Automatically falls back to the local cache
     def load_remote_target_states!
-      response = remote_request(Net::HTTP::Get)
+      response = remote_request Net::HTTP::Get, "api/status/#{self.name}"
       
       if response.code == '200'
         @loaded_from = :server
@@ -162,7 +172,7 @@ module Magistrate
     # Currently only sends basic worker info, but could start sending lots more:
     # 
     def send_status
-      remote_request Net::HTTP::Post, { :status => JSON.generate(status) }
+      remote_request Net::HTTP::Post, "api/status/#{self.name}", { :status => JSON.generate(status) }
     rescue StandardError => e
       log "Sending status to #{@config[:monitor_url]} failed"
       log "Error: #{e}"
@@ -174,11 +184,12 @@ module Magistrate
     end
     
     # Wrapper method for easy remote requests
-    def remote_request(klass, form_data = nil)
+    def remote_request(klass, path, form_data = {})
+      log "#{klass} request to #{path}"
       http = Net::HTTP.new(@uri.host, @uri.port)
       http.read_timeout = 30
-      request = klass.new(@uri.request_uri + "api/status/#{self.name}")
-      request.set_form_data(form_data) if form_data
+      request = klass.new(@uri.request_uri + path)
+      request.set_form_data(form_data) if klass == Net::HTTP::Post
       
       if @config[:http_username] && @config[:http_password]
         request.basic_auth @config[:http_username], @config[:http_password]
