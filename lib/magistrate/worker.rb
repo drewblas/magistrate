@@ -1,7 +1,7 @@
 module Magistrate
-class Process
+class Worker
 
-  attr_reader :name, :daemonize, :start_cmd, :stop_cmd, :pid_file, :working_dir, :env, :logs
+  attr_reader :name, :daemonize, :start_cmd, :stop_cmd, :pid_file, :working_dir, :env, :logs, :reset_target_state_to
   attr_accessor :target_state, :monitored
 
   def initialize(name, options = {})
@@ -62,10 +62,11 @@ class Process
   def supervise!
     log "Supervising.  Is: #{state}.  Target: #{@target_state}"
     if state != @target_state
-      if @target_state == :running
-        start
-      elsif @target_state == :stopped
-        stop
+      case @target_state
+      when :forced_restart 
+        
+      when :running then start
+      when :stopped then stop
       end
     end
   end

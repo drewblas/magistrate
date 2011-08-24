@@ -1,10 +1,10 @@
 require "spec_helper"
-require "magistrate/process"
+require "magistrate/worker"
 
-describe "Magistrate::Process" do
+describe "Magistrate::Worker" do
   describe 'Rake-Like Worker' do
     before(:each) do
-      @process = Magistrate::Process.new(
+      @process = Magistrate::Worker.new(
         :name => 'rake_like_worker',
         :daemonize => true,
         :start_cmd => 'ruby spec/resources/rake_like_worker.rb'

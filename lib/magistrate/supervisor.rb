@@ -23,9 +23,9 @@ module Magistrate
       
       FileUtils.mkdir_p(@pid_path) unless File.directory? @pid_path
 
-      @config[:workers].each do |k,v|
+      @config[:workers].each do |name,params|
         v[:pid_path] ||= @pid_path
-        @workers[k] = Process.new(k,v)
+        @workers[name] = Worker.new(name, params)
       end
       
       @loaded_from = nil
@@ -92,8 +92,8 @@ module Magistrate
            :workers => {}
           }
       
-      @workers.each do |k,process|
-        s[:workers][k] = process.status
+      @workers.each do |k,worker|
+        s[:workers][k] = worker.status
       end
       
       s
