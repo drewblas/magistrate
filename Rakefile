@@ -16,15 +16,10 @@ RSpec::Core::RakeTask.new(:spec) do |t|
   t.pattern = 'spec/**/*_spec.rb'
 end
 
-desc "Generate RCov code coverage report"
-task :rcov => "rcov:build" do
-  %x{ open coverage/index.html }
-end
-
-RSpec::Core::RakeTask.new("rcov:build") do |t|
+RSpec::Core::RakeTask.new(:rcov) do |t|
   t.pattern = 'spec/**/*_spec.rb'
   t.rcov = true
-  t.rcov_opts = [ "--exclude", ".bundle", "--exclude", "spec" ]
+  t.rcov_opts = ['--aggregate coverage/aggregate.data', "--exclude .bundle,/gems/,/Library/,/usr/,spec,lib/tasks"]
 end
 
 desc 'Build the manual'
