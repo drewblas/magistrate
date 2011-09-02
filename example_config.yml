@@ -8,7 +8,12 @@ monitor_url: http://localhost:3000/magistrate/
 root_name: super1
 
 #Use this to avoid using the hostname at all.  The supervisor name will be this instead of root_name-`hostname`
-#supervisor_name_override: some_other_name
+# supervisor_name_override: some_other_name
+
+# Username and password for authenticated communication between magistrate and magistrate_monitor
+# Both ends should be pointed towards the same magistrate.yml and should share these values
+# http_username: foo
+# http_password: bar
 
 workers:
   # If daemonize is true, then Magistrate will daemonize this process (it doesn't daemonize itself)
