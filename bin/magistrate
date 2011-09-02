@@ -41,7 +41,7 @@ ARGV.options do |opts|
   end
 end
 
-config_file ||= File.join('config', 'magistrate.yaml')
+config_file ||= File.join('config', 'magistrate.yml')
 
 ARGV[0] ||= 'run'
 
