@@ -61,10 +61,10 @@ module Magistrate
           puts worker.logs.join("\n")
         end
       end
-      
-      send_status
-      
+
       log "Run Complete at: #{Time.now}" #This is only good in verbose mode, but that's ok
+
+      send_status
     end
     
     # 
@@ -99,6 +99,7 @@ module Magistrate
            :monitor_url => @config[:monitor_url],
            :config_file => @config_file,
            :logs => @logs,
+           :env => `env`,
            :workers => {}
           }
       

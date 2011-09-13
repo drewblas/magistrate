@@ -23,7 +23,7 @@ If you're using capistrano, then the tmp/pids directory is persisted across depl
 
 Your user-space cron job should look like this:
 
-*/5 0 0 0 0 magistrate run --config ~/my_app/current/config/magistrate.yml
+* 0 0 0 0 magistrate run --config ~/my_app/current/config/magistrate.yml
 
 ### What if the server is down?
 
