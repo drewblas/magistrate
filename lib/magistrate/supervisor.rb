@@ -7,6 +7,7 @@ require 'json'
 require 'fileutils'
 require 'net/http'
 require 'uri'
+require 'time' #iso8601
 
 module Magistrate
   class Supervisor
@@ -38,7 +39,7 @@ module Magistrate
     end
 
     def run(params = nil)
-      log "Run started at: #{Time.now}"
+      log "Run started at: #{Time.now.iso8601}"
       
       log "Starting Magistrate [[[#{self.name}]]] talking to [[[#{@config[:monitor_url]}]]]"
       set_target_states!
@@ -62,7 +63,7 @@ module Magistrate
         end
       end
 
-      log "Run Complete at: #{Time.now}" #This is only good in verbose mode, but that's ok
+      log "Run Complete at: #{Time.now.iso8601}" #This is only good in verbose mode, but that's ok
 
       send_status
     end
