@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    magistrate (0.5.0)
+    magistrate (0.5.1)
       json
 
 GEM
