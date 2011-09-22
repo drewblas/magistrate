@@ -12,7 +12,7 @@ class Worker
     @working_dir  = options[:working_dir]
     @start_cmd    = options[:start_cmd]
     @pid_path     = options[:pid_path]
-    
+
     if @daemonize
       @pid_file    = File.join(@pid_path, "#{@name}.pid")
       @status_file = File.join(@pid_path, "#{@name}.status")
@@ -23,16 +23,16 @@ class Worker
       @stop_cmd     = options[:end_cmd]
       @pid_file     = options[:pid_file]
     end
-    
+
     @stop_timeout = 5
     @start_timeout = 5
-    
+
     @env = {}
 
     @target_state = :unknown
     @logs = []
   end
-  
+
   def log(str)
     @logs << str
   end
@@ -56,13 +56,14 @@ class Worker
       :state => self.state,
       :target_state => self.target_state,
       :pid => self.pid,
+      :bounces => @bounces,
       :logs => @logs
     }
   end
-  
+
   def running?
   end
-  
+
   def state
     if @target_state == :unmonitored || @target_state == :unknown
       :unmonitored
@@ -74,7 +75,7 @@ class Worker
       end
     end
   end
-  
+
   # This is to be called when we first start managing a worker
   # It will check if the pid exists and if so, is the process responding OK?
   # It will take action based on the target state
@@ -98,7 +99,7 @@ class Worker
 
     save_status
   end
-  
+
   def start
     if @daemonize
       log "Starting as daemon with double_fork"
@@ -111,11 +112,11 @@ class Worker
     end
     @pid
   end
-  
+
   def stop
     if @daemonize
       signal(@stop_signal, pid)
-        
+
       # Poll to see if it's dead
       @stop_timeout.times do
         begin
@@ -125,10 +126,10 @@ class Worker
           log "Process stopped"
           return
         end
-        
+
         sleep 1
       end
-      
+
       signal('KILL', pid)
       log "Still alive after #{@stop_timeout}s; sent SIGKILL"
     else
@@ -136,20 +137,20 @@ class Worker
       ensure_stop
     end
   end
-  
+
   # single fork self-daemonizing processes
   # we want to wait for them to finish
   def single_fork(command)
     pid = self.spawn(command)
     status = ::Process.waitpid2(pid, 0)
     exit_code = status[1] >> 8
-    
+
     if exit_code != 0
       log "Command exited with non-zero code = #{exit_code}"
     end
     pid
   end
-  
+
   def double_fork(command)
     pid = nil
     # double fork daemonized processes
@@ -162,7 +163,7 @@ class Worker
         pid = self.spawn(command)
         puts pid.to_s # send pid back to forker
       end
-      
+
       ::Process.waitpid(opid, 0)
       w.close
       pid = r.gets.chomp
@@ -171,10 +172,10 @@ class Worker
       r.close rescue nil
       w.close rescue nil
     end
-    
+
     pid
   end
-  
+
   # Fork/exec the given command, returns immediately
   #   +command+ is the String containing the shell command
   #
