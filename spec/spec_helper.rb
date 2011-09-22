@@ -1,7 +1,7 @@
 require "rubygems"
 require 'webmock/rspec'
 require "rspec"
-#require "fakefs/safe"
+require "fakefs/safe"
 #require "fakefs/spec_helpers"
 
 $:.unshift File.expand_path("../../lib", __FILE__)

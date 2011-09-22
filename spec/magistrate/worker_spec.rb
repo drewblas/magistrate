@@ -1,9 +1,14 @@
 require "spec_helper"
 require "magistrate/worker"
-require 'fakefs'
 
 describe "Magistrate::Worker" do
   describe 'Rake-Like Worker' do
+    around(:each) do |example|
+      FakeFS.activate!
+      example.run
+      FakeFS.deactivate!
+    end
+    
     before(:each) do
 #      Dir.glob('spec/tmp/pids/*').each do |f|
 #        File.delete(f)
