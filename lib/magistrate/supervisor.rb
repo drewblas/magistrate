@@ -99,7 +99,7 @@ module Magistrate
            :monitor_url => @config[:monitor_url],
            :config_file => @config_file,
            :logs => @logs,
-           :env => `env`,
+           :env => `env`.split("\n"),
            :workers => {}
           }
       
