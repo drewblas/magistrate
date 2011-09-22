@@ -9,7 +9,7 @@ require 'net/http'
 require 'uri'
 
 module Magistrate
-  class Supervisor    
+  class Supervisor
     def initialize(config_file, overrides = {})
       @workers = {}
       
@@ -140,6 +140,7 @@ module Magistrate
       response = remote_request Net::HTTP::Get, "api/status/#{self.name}"
       
       if response.code == '200'
+        log "Retrieved remote target states successfully"
         @loaded_from = :server
         @target_states = JSON.parse(response.body)
         save_target_states! # The double serialization here might not be best for performance, but will guarantee that the locally stored file is internally consistent

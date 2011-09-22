@@ -1,7 +1,9 @@
+require 'yaml'
+
 module Magistrate
 class Worker
 
-  attr_reader :name, :daemonize, :start_cmd, :stop_cmd, :pid_file, :working_dir, :env, :logs, :reset_target_state_to
+  attr_reader :name, :daemonize, :start_cmd, :stop_cmd, :pid_file, :working_dir, :env, :logs, :reset_target_state_to, :bounces
   attr_accessor :target_state, :monitored
 
   def initialize(name, options = {})
@@ -12,8 +14,11 @@ class Worker
     @pid_path     = options[:pid_path]
     
     if @daemonize
-      @pid_file   = File.join(@pid_path, "#{@name}.pid")
+      @pid_file    = File.join(@pid_path, "#{@name}.pid")
+      @status_file = File.join(@pid_path, "#{@name}.status")
       @stop_signal = options[:stop_signal] || 'TERM'
+      @previous_status = load_previous_status
+      @bounces     = @previous_status[:bounces] || 0
     else
       @stop_cmd     = options[:end_cmd]
       @pid_file     = options[:pid_file]
@@ -31,7 +36,21 @@ class Worker
   def log(str)
     @logs << str
   end
-  
+
+  # Loads the number of times in a row this worker has been started without successfully staying running
+  # This is stored in the @status_file
+  def load_previous_status
+    File.open(@status_file) { |file| YAML.load(file) } || {}
+  rescue
+    {}
+  end
+
+  def save_status
+    if @status_file
+      File.open(@status_file, "w") { |file| YAML.dump(status, file) } rescue nil
+    end
+  end
+
   def status
     {
       :state => self.state,
@@ -68,10 +87,16 @@ class Worker
         log "Restart: Stopping, then Starting, then reporting new target_state of :running"
         stop
         start
-      when :running then start
+      when :running then 
+        start
+        @bounces += 1
       when :stopped then stop
       end
+    else
+      @bounces = 0
     end
+
+    save_status
   end
   
   def start
